@@ -1,10 +1,10 @@
 import gradio as gr
-import openai_gradio
+import dashscope_gradio
 
 with gr.Blocks() as demo:
-    with gr.Tab("GPT-4-turbo"):
-        gr.load('gpt-4-turbo', src=openai_gradio.registry)
+    with gr.Tab("Qwen-turbo"):
+        gr.load('qwen-turbo', src=dashscope_gradio.registry)
     with gr.Tab("GPT-3.5-turbo"):
-        gr.load('gpt-3.5-turbo', src=openai_gradio.registry)
+        gr.load('gpt-3.5-turbo', src=dashscope_gradio.registry)
 
 demo.launch()

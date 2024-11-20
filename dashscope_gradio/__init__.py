@@ -6,10 +6,13 @@ from typing import Callable
 __version__ = "0.0.3"
 
 
-def get_fn(model_name: str, preprocess: Callable, postprocess: Callable, api_key: str):
+def get_fn(model_name: str, preprocess: Callable, postprocess: Callable, api_key: str, base_url: str | None = None):
     def fn(message, history):
         inputs = preprocess(message, history)
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
+        )
         completion = client.chat.completions.create(
             model=model_name,
             messages=inputs["messages"],
@@ -50,21 +53,22 @@ def get_pipeline(model_name):
     return "chat"
 
 
-def registry(name: str, token: str | None = None, **kwargs):
+def registry(name: str, token: str | None = None, base_url: str | None = None, **kwargs):
     """
-    Create a Gradio Interface for a model on OpenAI.
+    Create a Gradio Interface for a model on OpenAI or DashScope.
 
     Parameters:
-        - name (str): The name of the OpenAI model.
-        - token (str, optional): The API key for OpenAI.
+        - name (str): The name of the model (e.g. "qwen-turbo", "gpt-3.5-turbo")
+        - token (str, optional): The API key
+        - base_url (str, optional): The base URL for the API. Defaults to DashScope URL.
     """
-    api_key = token or os.environ.get("OPENAI_API_KEY")
+    api_key = token or os.environ.get("DASHSCOPE_API_KEY") or os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        raise ValueError("OPENAI_API_KEY environment variable is not set.")
+        raise ValueError("API key not found in environment variables.")
 
     pipeline = get_pipeline(name)
     inputs, outputs, preprocess, postprocess = get_interface_args(pipeline)
-    fn = get_fn(name, preprocess, postprocess, api_key)
+    fn = get_fn(name, preprocess, postprocess, api_key, base_url)
 
     if pipeline == "chat":
         interface = gr.ChatInterface(fn=fn, **kwargs)

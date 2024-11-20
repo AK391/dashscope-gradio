@@ -1,10 +1,10 @@
 import gradio as gr
-import openai_gradio
+import dashscope_gradio
 
 gr.load(
-    name='gpt-4-turbo',
-    src=openai_gradio.registry,
-    title='OpenAI-Gradio Integration',
-    description="Chat with gpt-4-turbo model.",
+    name='qwen-turbo',
+    src=dashscope_gradio.registry,
+    title='DashScope-Gradio Integration',
+    description="Chat with qwen-turbo model.",
     examples=["Explain quantum gravity to a 5-year old.", "How many R are there in the word Strawberry?"]
 ).launch()

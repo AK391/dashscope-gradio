@@ -1,7 +1,7 @@
 import gradio as gr
-import openai_gradio
+import dashscope_gradio
 
 gr.load(
-    name='gpt-4-turbo',
-    src=openai_gradio.registry,
+    name='qwen-turbo-latest',
+    src=dashscope_gradio.registry,
 ).launch()
