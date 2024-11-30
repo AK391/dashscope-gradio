@@ -27,13 +27,19 @@ def get_fn(model_name: str, preprocess: Callable, postprocess: Callable, api_key
     return fn
 
 
-def get_interface_args(pipeline):
+def get_interface_args(pipeline, model_name: str):
     if pipeline == "chat":
         inputs = None
         outputs = None
 
         def preprocess(message, history):
             messages = []
+            # Add system prompt for qwq-32b-preview
+            if model_name == "qwq-32b-preview":
+                messages.append({
+                    "role": "system",
+                    "content": "You are a helpful and harmless assistant. You are Qwen developed by Alibaba. You should think step-by-step."
+                })
             for user_msg, assistant_msg in history:
                 messages.append({"role": "user", "content": user_msg})
                 messages.append({"role": "assistant", "content": assistant_msg})
@@ -67,7 +73,7 @@ def registry(name: str, token: str | None = None, base_url: str | None = None, *
         raise ValueError("API key not found in environment variables.")
 
     pipeline = get_pipeline(name)
-    inputs, outputs, preprocess, postprocess = get_interface_args(pipeline)
+    inputs, outputs, preprocess, postprocess = get_interface_args(pipeline, name)
     fn = get_fn(name, preprocess, postprocess, api_key, base_url)
 
     if pipeline == "chat":
