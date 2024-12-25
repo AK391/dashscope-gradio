@@ -9,6 +9,9 @@ __version__ = "0.0.3"
 def get_fn(model_name: str, preprocess: Callable, postprocess: Callable, api_key: str, base_url: str | None = None):
     def fn(message, history):
         inputs = preprocess(message, history)
+        
+        
+
         client = OpenAI(
             api_key=api_key,
             base_url="https://dashscope.aliyuncs.com/compatible-mode/v1"
@@ -40,10 +43,31 @@ def get_interface_args(pipeline, model_name: str):
                     "role": "system",
                     "content": "You are a helpful and harmless assistant. You are Qwen developed by Alibaba. You should think step-by-step."
                 })
+
             for user_msg, assistant_msg in history:
                 messages.append({"role": "user", "content": user_msg})
                 messages.append({"role": "assistant", "content": assistant_msg})
-            messages.append({"role": "user", "content": message})
+            
+            # Handle multimodal input
+            if isinstance(message, dict):
+                content = []
+                if message.get("files"):
+                    # Convert local file path to data URL
+                    import base64
+                    with open(message["files"][0], "rb") as image_file:
+                        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+                        content.append({
+                            "type": "image_url",
+                            "image_url": f"data:image/jpeg;base64,{encoded_image}"
+                        })
+                content.append({
+                    "type": "text",
+                    "text": message["text"]
+                })
+                messages.append({"role": "user", "content": content})
+            else:
+                messages.append({"role": "user", "content": [{"type": "text", "text": message}]})
+                
             return {"messages": messages}
 
         postprocess = lambda x: x  # No post-processing needed
@@ -68,7 +92,7 @@ def registry(name: str, token: str | None = None, base_url: str | None = None, *
         - token (str, optional): The API key
         - base_url (str, optional): The base URL for the API. Defaults to DashScope URL.
     """
-    api_key = token or os.environ.get("DASHSCOPE_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    api_key = token or os.environ.get("DASHSCOPE_API_KEY")
     if not api_key:
         raise ValueError("API key not found in environment variables.")
 
@@ -77,7 +101,7 @@ def registry(name: str, token: str | None = None, base_url: str | None = None, *
     fn = get_fn(name, preprocess, postprocess, api_key, base_url)
 
     if pipeline == "chat":
-        interface = gr.ChatInterface(fn=fn, **kwargs)
+        interface = gr.ChatInterface(fn=fn, multimodal=True, **kwargs)
     else:
         # For other pipelines, create a standard Interface (not implemented yet)
         interface = gr.Interface(fn=fn, inputs=inputs, outputs=outputs, **kwargs)
